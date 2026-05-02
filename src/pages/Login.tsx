@@ -3,10 +3,16 @@ import { useNavigate, Link } from "react-router-dom";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { auth } from "@/lib/api";
 
+const IS_DEV = import.meta.env.DEV;
+
 export default function Login() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Dev-only state
+  const [devEmail, setDevEmail] = useState("");
+  const [devPassword, setDevPassword] = useState("");
 
   const handleGoogleSuccess = async (response: CredentialResponse) => {
     if (!response.credential) {
@@ -22,9 +28,7 @@ export default function Login() {
         body: JSON.stringify({ credential: response.credential }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || "Sign-in failed. Please try again.");
-      }
+      if (!res.ok) throw new Error(data.detail || "Sign-in failed. Please try again.");
       auth.setTokens(data.access, data.refresh);
       navigate("/dashboard");
     } catch (err) {
@@ -37,6 +41,29 @@ export default function Login() {
   const handleGoogleError = () => {
     setError("Google sign-in was cancelled or failed. Please try again.");
   };
+
+  // ── DEV ONLY ────────────────────────────────────────────────────────────────
+  const handleDevLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: devEmail, password: devPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Login failed.");
+      auth.setTokens(data.access, data.refresh);
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  // ────────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-100 to-blue-200 flex flex-col">
@@ -79,10 +106,39 @@ export default function Login() {
               />
             )}
 
-            {error && (
-              <p className="text-sm text-red-500 text-center">{error}</p>
-            )}
+            {error && <p className="text-sm text-red-500 text-center">{error}</p>}
           </div>
+
+          {/* ── DEV LOGIN — only visible locally, stripped from production build ── */}
+          {IS_DEV && (
+            <div className="w-full border-t border-dashed border-gray-200 pt-6">
+              <p className="text-xs text-gray-400 text-center mb-3 font-mono">DEV LOGIN</p>
+              <form onSubmit={handleDevLogin} className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Username or email"
+                  value={devEmail}
+                  onChange={(e) => setDevEmail(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={devPassword}
+                  onChange={(e) => setDevPassword(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gray-800 text-white rounded-lg py-2 text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
+                >
+                  Dev Sign In
+                </button>
+              </form>
+            </div>
+          )}
+          {/* ───────────────────────────────────────────────────────────────────── */}
 
           <p className="text-xs text-gray-400 text-center leading-relaxed">
             By continuing, you agree to our{" "}
