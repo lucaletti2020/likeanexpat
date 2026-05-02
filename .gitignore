@@ -6,8 +6,10 @@ dist/
 
 # Environment files — never commit these (contain API keys)
 .env
-.env.*
+.env.local
+.env.*.local
 backend/.env
+# .env.production is safe to commit (only contains public Google Client ID)
 
 # Python
 backend/venv/
