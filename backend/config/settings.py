@@ -122,7 +122,7 @@ SIMPLE_JWT = {
 # ─── CORS ─────────────────────────────────────────────────────────────────────
 
 CORS_ALLOWED_ORIGINS = [
-    os.getenv("FRONTEND_URL", "http://localhost:5173"),
+    os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/"),
 ]
 CORS_ALLOW_CREDENTIALS = True
 
