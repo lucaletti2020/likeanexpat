@@ -16,4 +16,6 @@ COPY backend/ .
 COPY --from=frontend /app/dist ./frontend_dist
 RUN python manage.py collectstatic --noinput
 EXPOSE 8000
-CMD daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application
+COPY backend/start.sh ./start.sh
+RUN chmod +x start.sh
+CMD ["./start.sh"]
